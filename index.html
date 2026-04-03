@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>擲筊</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+/* ===== Design Tokens ===== */
+:root {
+  --bg-deep:    #0d0908;
+  --bg-mid:     #160e0c;
+  --ink:        #f5e8d0;
+  --ink-muted:  rgba(245, 232, 208, 0.55);
+  --warm:       #efc77b;
+  --warm-dim:   rgba(239, 199, 123, 0.18);
+  --red:        #c93030;
+  --red-bright: #e84040;
+  --line:       rgba(239, 199, 123, 0.18);
+  --glass:      rgba(22, 14, 12, 0.72);
+  --shadow-lg:  0 32px 80px rgba(0, 0, 0, 0.55);
+  --shadow-md:  0 8px 28px rgba(0, 0, 0, 0.4);
+  --radius-pill: 999px;
+  --radius-card: 1.25rem;
+  --transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== Reset ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  min-height: 100vh;
+  font-family: 'Noto Sans TC', system-ui, sans-serif;
+  color: var(--ink);
+  background-color: var(--bg-deep);
+  background-image:
+    radial-gradient(ellipse 60% 50% at 50% 0%,   rgba(201, 48, 48, 0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 20% 100%,  rgba(239, 199, 123, 0.09) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 100%,  rgba(164, 60, 30, 0.1) 0%, transparent 60%),
+    linear-gradient(180deg, #14090a 0%, #0d0908 50%, #100c0a 100%);
+  overflow-x: hidden;
+}
+
+/* ===== 背景飄動粒子 ===== */
+.bg-particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.bg-particles span {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--warm);
+  opacity: 0;
+  animation: float-particle linear infinite;
+}
+.bg-particles span:nth-child(1) { width: 3px; height: 3px; left: 15%; animation-duration: 12s; animation-delay: 0s; }
+.bg-particles span:nth-child(2) { width: 2px; height: 2px; left: 35%; animation-duration: 18s; animation-delay: 4s; }
+.bg-particles span:nth-child(3) { width: 4px; height: 4px; left: 55%; animation-duration: 14s; animation-delay: 2s; }
+.bg-particles span:nth-child(4) { width: 2px; height: 2px; left: 70%; animation-duration: 20s; animation-delay: 7s; }
+.bg-particles span:nth-child(5) { width: 3px; height: 3px; left: 85%; animation-duration: 16s; animation-delay: 1s; }
+.bg-particles span:nth-child(6) { width: 2px; height: 2px; left: 5%;  animation-duration: 22s; animation-delay: 9s; }
+
+@keyframes float-particle {
+  0%   { transform: translateY(110vh) scale(0.5); opacity: 0; }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.3; }
+  100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+}
+
+/* ===== App 主容器 ===== */
+.app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 2rem 1.5rem 5rem;
+}
+
+/* ===== 頂部標題 ===== */
+.app-header {
+  text-align: center;
+  margin-bottom: 1.75rem;
+  user-select: none;
+}
+.title-ornament {
+  font-size: 0.85rem;
+  color: var(--warm);
+  letter-spacing: 0.6em;
+  /* 修正 letter-spacing 右偏：補左邊等量縮排 */
+  text-indent: 0.6em;
+  opacity: 0.7;
+  margin-bottom: 0.4rem;
+}
+.app-title {
+  font-family: 'Noto Serif TC', serif;
+  font-size: clamp(2.6rem, 8vw, 4rem);
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  /* 修正 letter-spacing 造成的視覺右偏，補等量 text-indent */
+  text-indent: 0.5em;
+  background: linear-gradient(160deg, #fce7bb 0%, #efc77b 45%, #c9830a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  filter: drop-shadow(0 0 28px rgba(239, 199, 123, 0.35));
+}
+.app-subtitle {
+  margin-top: 0.6rem;
+  font-size: clamp(0.75rem, 2vw, 0.88rem);
+  color: var(--ink-muted);
+  letter-spacing: 0.15em;
+  /* 修正副標題 letter-spacing 右偏 */
+  text-indent: 0.15em;
+  font-weight: 300;
+}
+
+/* ===== 主題輸入區 ===== */
+.subject-section {
+  width: min(26rem, calc(100vw - 3rem));
+  margin-bottom: 1.5rem;
+  animation: slide-down 0.28s ease;
+}
+.subject-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--warm);
+  letter-spacing: 0.12em;
+  margin-bottom: 0.5rem;
+  opacity: 0.85;
+}
+.subject-field-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.subject-icon {
+  position: absolute;
+  left: 1rem;
+  font-size: 1rem;
+  pointer-events: none;
+  z-index: 1;
+}
+.subject-input {
+  width: 100%;
+  height: 3rem;
+  padding: 0 1.2rem 0 2.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.92rem;
+  letter-spacing: 0.05em;
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  -webkit-appearance: none;
+}
+.subject-input::placeholder { color: var(--ink-muted); }
+.subject-input:focus {
+  outline: none;
+  border-color: rgba(239, 199, 123, 0.5);
+  box-shadow: var(--shadow-md), 0 0 0 3px rgba(239, 199, 123, 0.12), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* ===== 擲筊舞台 ===== */
+.stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.glow-ring {
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201, 48, 48, 0.09) 0%, transparent 70%);
+  pointer-events: none;
+  animation: pulse-ring 4s ease-in-out infinite;
+}
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(0.95); opacity: 0.6; }
+  50%       { transform: scale(1.08); opacity: 1; }
+}
+
+/* ===== 擲筊按鈕 ===== */
+.jiaobei-button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.jiaobei-button:focus-visible {
+  outline: 2px solid rgba(239, 199, 123, 0.55);
+  outline-offset: 8px;
+  border-radius: var(--radius-card);
+}
+.jiaobei-pair {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.25rem, 5vw, 2.5rem);
+}
+.jiaobei-piece {
+  display: block;
+  width: clamp(120px, 26vw, 200px);
+  height: auto;
+  filter:
+    drop-shadow(0 20px 40px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 4px 12px rgba(201, 48, 48, 0.25));
+  transition: transform 0.22s ease, filter 0.22s ease;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.jiaobei-piece--right { transform: scaleX(-1); }
+
+.jiaobei-button:hover .jiaobei-piece:not(.is-tossing-left):not(.is-tossing-right) {
+  transform: translateY(-5px);
+  filter:
+    drop-shadow(0 28px 50px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 6px 16px rgba(201, 48, 48, 0.4));
+}
+.jiaobei-button:hover .jiaobei-piece--right:not(.is-tossing-right) {
+  transform: scaleX(-1) translateY(-5px);
+}
+
+.throw-hint {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+  pointer-events: none;
+  transition: color var(--transition), opacity var(--transition);
+}
+.jiaobei-button:hover .throw-hint {
+  color: var(--warm);
+  opacity: 0.9;
+}
+
+/* ===== 擲筊動畫 ===== */
+.jiaobei-piece.is-tossing-left {
+  animation: toss-left 0.72s cubic-bezier(0.22, 0.8, 0.28, 1);
+}
+.jiaobei-piece.is-tossing-right {
+  animation: toss-right 0.72s cubic-bezier(0.22, 0.8, 0.28, 1);
+}
+@keyframes toss-left {
+  0%   { transform: translateY(0)     rotate(0deg); }
+  24%  { transform: translateY(-22px) rotate(-18deg); }
+  56%  { transform: translateY(6px)   rotate(10deg); }
+  100% { transform: translateY(0)     rotate(0deg); }
+}
+@keyframes toss-right {
+  0%   { transform: scaleX(-1) translateY(0)     rotate(0deg); }
+  24%  { transform: scaleX(-1) translateY(-22px) rotate(18deg); }
+  56%  { transform: scaleX(-1) translateY(6px)   rotate(-10deg); }
+  100% { transform: scaleX(-1) translateY(0)     rotate(0deg); }
+}
+
+/* ===== 結果區（固定佔位，不用 hidden） ===== */
+.result-section {
+  min-height: 8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+.result-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.1rem 2.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  min-width: 10rem;
+  text-align: center;
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition:
+    opacity 0.32s ease,
+    transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.result-card--hidden {
+  opacity: 0;
+  transform: scale(0.88) translateY(8px);
+  pointer-events: none;
+}
+.result-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.result-name {
+  font-family: 'Noto Serif TC', serif;
+  font-size: clamp(1.4rem, 4vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  color: var(--warm);
+  filter: drop-shadow(0 0 8px rgba(239, 199, 123, 0.4));
+}
+.result-desc {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.12em;
+  text-indent: 0.12em;
+}
+
+/* 各結果強調色 */
+.result-card--sheng { border-color: rgba(239, 199, 123, 0.5); }
+.result-card--sheng .result-name { color: #fce181; }
+.result-card--yin   { border-color: rgba(120, 130, 180, 0.5); }
+.result-card--yin   .result-name { color: #b0b8e8; filter: drop-shadow(0 0 8px rgba(142, 155, 220, 0.4)); }
+.result-card--xiao  { border-color: rgba(180, 100, 60, 0.5); }
+.result-card--xiao  .result-name { color: #e8a070; filter: drop-shadow(0 0 8px rgba(220, 130, 80, 0.4)); }
+
+/* ===== 設定按鈕 ===== */
+.advanced-toggle {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 3.6rem;
+  height: 3.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  color: var(--ink-muted);
+  transition:
+    color var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition),
+    background var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.advanced-toggle:hover,
+.advanced-toggle.is-active {
+  color: var(--warm);
+  border-color: rgba(239, 199, 123, 0.5);
+  box-shadow: var(--shadow-md), 0 0 18px rgba(239, 199, 123, 0.2);
+  background: rgba(22, 14, 12, 0.88);
+}
+.advanced-toggle:focus-visible {
+  outline: 2px solid rgba(239, 199, 123, 0.55);
+  outline-offset: 4px;
+}
+.toggle-icon { width: 1.3rem; height: 1.3rem; }
+.toggle-label { font-size: 0.6rem; letter-spacing: 0.1em; }
+
+/* ===== 其他動畫 ===== */
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-0.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== RWD ===== */
+@media (max-width: 540px) {
+  .app { padding: 1.5rem 1rem 5rem; }
+  .app-header { margin-bottom: 1.25rem; }
+  .jiaobei-pair { gap: 0.75rem; }
+  .jiaobei-piece { width: min(38vw, 160px); }
+  .glow-ring { width: 260px; height: 260px; }
+  .advanced-toggle { right: 1rem; bottom: 1rem; width: 3.2rem; height: 3.2rem; }
+  .result-section { min-height: 7rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-particles span, .glow-ring { animation: none; }
+  .jiaobei-piece.is-tossing-left,
+  .jiaobei-piece.is-tossing-right { animation-duration: 0.1s; }
+  .result-card { transition-duration: 0.1s; }
+}
+  </style>
+</head>
+<body>
+  <div class="bg-particles" aria-hidden="true">
+    <span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
+
+  <main class="app">
+    <header class="app-header">
+      <div class="title-ornament" aria-hidden="true">✦</div>
+      <h1 class="app-title">擲筊</h1>
+      <p class="app-subtitle">以筊問神，聽聽神明的旨意</p>
+    </header>
+
+    <section id="subjectSection" class="subject-section" hidden>
+      <label class="subject-label" for="subjectInput">請輸入問題或主題</label>
+      <div class="subject-field-wrap">
+        <span class="subject-icon" aria-hidden="true">🙏</span>
+        <input
+          id="subjectInput"
+          class="subject-input"
+          type="text"
+          autocomplete="off"
+          placeholder="例如：此事是否順利？"
+          maxlength="50"
+        >
+      </div>
+    </section>
+
+    <section class="stage">
+      <div class="glow-ring" aria-hidden="true"></div>
+      <button id="jiaobeiButton" class="jiaobei-button" type="button" aria-label="擲筊">
+        <div class="jiaobei-pair" aria-hidden="true">
+          <img id="jiaobeiLeft"  class="jiaobei-piece" src="" alt="">
+          <img id="jiaobeiRight" class="jiaobei-piece jiaobei-piece--right" src="" alt="">
+        </div>
+        <span class="throw-hint">點擊擲筊</span>
+      </button>
+    </section>
+
+    <section class="result-section" aria-live="polite">
+      <div id="resultCard" class="result-card result-card--hidden">
+        <div class="result-icon" id="resultIcon" aria-hidden="true">⊕</div>
+        <div class="result-name" id="resultName"></div>
+        <div class="result-desc" id="resultDesc"></div>
+      </div>
+    </section>
+
+    <button id="advancedToggle" class="advanced-toggle" type="button" aria-label="設定主題">
+      <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+      <span class="toggle-label">主題</span>
+    </button>
+  </main>
+
+  <script>
+/* ── SVG 圖形資源（內嵌 data URI，無需外部檔案）── */
+(function () {
+  var _flat = [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 360">',
+      '<defs>',
+        '<linearGradient id="ff" x1="0" y1="0" x2="1" y2="1">',
+          '<stop offset="0" stop-color="#d6382f"/>',
+          '<stop offset="0.55" stop-color="#b51416"/>',
+          '<stop offset="1" stop-color="#7c0910"/>',
+        '</linearGradient>',
+        '<filter id="fs" x="-20%" y="-20%" width="140%" height="150%">',
+          '<feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#000" flood-opacity="0.25"/>',
+        '</filter>',
+        '<path id="fshape" d="M63 185C63 97 132 43 214 43c39 0 76 12 106 34c-43 35-68 84-68 137c0 38 12 74 32 105c-26 13-53 20-81 20C125 339 63 272 63 185Z"/>',
+      '</defs>',
+      '<g filter="url(#fs)">',
+        '<use href="#fshape" fill="url(#ff)" stroke="#7b060d" stroke-width="6"/>',
+        '<path d="M106 92c24-12 58-19 93-17" fill="none" stroke="#f3b4a4" stroke-linecap="round" stroke-width="7" opacity="0.48"/>',
+        '<path d="M120 118c18 48 18 98-2 147" fill="none" stroke="#7f0912" stroke-linecap="round" stroke-width="10" opacity="0.18"/>',
+        '<path d="M219 124c10 9 16 20 18 34" fill="none" stroke="#8c140f" stroke-width="5" opacity="0.35"/>',
+        '<path d="M244 181c12 4 19 12 21 25" fill="none" stroke="#8c140f" stroke-width="5" opacity="0.35"/>',
+        '<path d="M208 224c10 5 16 13 17 25" fill="none" stroke="#8c140f" stroke-width="5" opacity="0.35"/>',
+      '</g>',
+    '</svg>'
+  ].join('');
+
+  var _round = [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 360">',
+      '<defs>',
+        '<linearGradient id="rf" x1="0" y1="0" x2="1" y2="1">',
+          '<stop offset="0" stop-color="#be1318"/>',
+          '<stop offset="0.58" stop-color="#980b12"/>',
+          '<stop offset="1" stop-color="#68070d"/>',
+        '</linearGradient>',
+        '<filter id="rs" x="-20%" y="-20%" width="140%" height="150%">',
+          '<feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#000" flood-opacity="0.25"/>',
+        '</filter>',
+        '<path id="rshape" d="M63 185C63 97 132 43 214 43c39 0 76 12 106 34c-43 35-68 84-68 137c0 38 12 74 32 105c-26 13-53 20-81 20C125 339 63 272 63 185Z"/>',
+      '</defs>',
+      '<g filter="url(#rs)">',
+        '<use href="#rshape" fill="url(#rf)" stroke="#65070d" stroke-width="6"/>',
+        '<ellipse cx="179" cy="133" rx="56" ry="24" fill="#f1a098" opacity="0.22" transform="rotate(-16 179 133)"/>',
+        '<path d="M92 199c32 23 72 33 112 30" fill="none" stroke="#ef9b90" stroke-linecap="round" stroke-width="7" opacity="0.28"/>',
+      '</g>',
+    '</svg>'
+  ].join('');
+
+  window._JiaobeiAssets = {
+    flat:  'data:image/svg+xml,' + encodeURIComponent(_flat),
+    round: 'data:image/svg+xml,' + encodeURIComponent(_round)
+  };
+})();
+
+/* ── jiaobei-result.js ── */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
+  root.JiaobeiResult = api;
+})(typeof window !== 'undefined' ? window : globalThis, function () {
+  var ASSET_PATHS = {
+    flat:  window._JiaobeiAssets ? window._JiaobeiAssets.flat  : '',
+    round: window._JiaobeiAssets ? window._JiaobeiAssets.round : ''
+  };
+
+  var LABELS = { sheng: '聖筊', yin: '陰筊', xiao: '笑筊' };
+
+  function pickResult(r) {
+    if (r < 0.3333333333) { return 'sheng'; }
+    if (r < 0.6666666666) { return 'yin'; }
+    return 'xiao';
+  }
+
+  function getFaces(result) {
+    if (result === 'yin')  { return ['flat',  'flat']; }
+    if (result === 'xiao') { return ['round', 'round']; }
+    return ['flat', 'round'];
+  }
+
+  function getPieceAsset(face) { return ASSET_PATHS[face] || ASSET_PATHS.flat; }
+  function getLabel(result)    { return LABELS[result]    || LABELS.sheng; }
+
+  return { pickResult: pickResult, getFaces: getFaces, getPieceAsset: getPieceAsset, getLabel: getLabel };
+});
+
+/* ── app.js ── */
+(function () {
+  var resultApi = window.JiaobeiResult;
+  if (!resultApi) { return; }
+
+  var RESULT_META = {
+    sheng: { icon: '🌕', desc: '神明允許，吉' },
+    yin:   { icon: '🌑', desc: '神明不允，否' },
+    xiao:  { icon: '🌓', desc: '神明在笑，再問' }
+  };
+
+  var refs  = {};
+  var state = { advancedOpen: false };
+
+  document.addEventListener('DOMContentLoaded', init);
+
+  function init() {
+    refs.jiaobeiButton  = document.getElementById('jiaobeiButton');
+    refs.jiaobeiLeft    = document.getElementById('jiaobeiLeft');
+    refs.jiaobeiRight   = document.getElementById('jiaobeiRight');
+    refs.resultCard     = document.getElementById('resultCard');
+    refs.resultIcon     = document.getElementById('resultIcon');
+    refs.resultName     = document.getElementById('resultName');
+    refs.resultDesc     = document.getElementById('resultDesc');
+    refs.advancedToggle = document.getElementById('advancedToggle');
+    refs.subjectSection = document.getElementById('subjectSection');
+    refs.subjectInput   = document.getElementById('subjectInput');
+
+    loadSubject();
+    bindEvents();
+    applyResult('sheng');
+  }
+
+  function bindEvents() {
+    refs.jiaobeiButton.addEventListener('click', toss);
+    refs.advancedToggle.addEventListener('click', toggleAdvanced);
+    refs.subjectInput.addEventListener('input', saveSubject);
+  }
+
+  function toss() {
+    refs.resultCard.classList.add('result-card--hidden');
+    refs.resultCard.classList.remove('result-card--sheng', 'result-card--yin', 'result-card--xiao');
+    refs.jiaobeiLeft.classList.add('is-tossing-left');
+    refs.jiaobeiRight.classList.add('is-tossing-right');
+    window.setTimeout(function () {
+      refs.jiaobeiLeft.classList.remove('is-tossing-left');
+      refs.jiaobeiRight.classList.remove('is-tossing-right');
+      applyResult(resultApi.pickResult(Math.random()));
+    }, 720);
+  }
+
+  function toggleAdvanced() {
+    state.advancedOpen = !state.advancedOpen;
+    refs.subjectSection.hidden = !state.advancedOpen;
+    refs.advancedToggle.classList.toggle('is-active', state.advancedOpen);
+    if (state.advancedOpen) { refs.subjectInput.focus(); }
+  }
+
+  function applyResult(result) {
+    var faces = resultApi.getFaces(result);
+    refs.jiaobeiLeft.src  = resultApi.getPieceAsset(faces[0]);
+    refs.jiaobeiRight.src = resultApi.getPieceAsset(faces[1]);
+
+    var meta = RESULT_META[result] || RESULT_META.sheng;
+    refs.resultIcon.textContent = meta.icon;
+    refs.resultName.textContent = resultApi.getLabel(result);
+    refs.resultDesc.textContent = meta.desc;
+
+    refs.resultCard.classList.remove('result-card--sheng', 'result-card--yin', 'result-card--xiao');
+    refs.resultCard.classList.add('result-card--' + result);
+    refs.resultCard.classList.remove('result-card--hidden');
+  }
+
+  function loadSubject() {
+    try { refs.subjectInput.value = localStorage.getItem('jiaobei:subject') || ''; }
+    catch (e) { refs.subjectInput.value = ''; }
+  }
+
+  function saveSubject() {
+    try { localStorage.setItem('jiaobei:subject', refs.subjectInput.value); }
+    catch (e) { /* noop */ }
+  }
+})();
+  </script>
+</body>
+</html>
