@@ -109,12 +109,17 @@ body {
   letter-spacing: 0.5em;
   /* 修正 letter-spacing 造成的視覺右偏，補等量 text-indent */
   text-indent: 0.5em;
-  background: linear-gradient(160deg, #fce7bb 0%, #efc77b 45%, #c9830a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--warm); /* 不支援漸層裁切時的備用色（黃金色） */
   line-height: 1;
   filter: drop-shadow(0 0 28px rgba(239, 199, 123, 0.35));
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .app-title {
+    background: linear-gradient(160deg, #fce7bb 0%, #efc77b 45%, #c9830a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
 .app-subtitle {
   margin-top: 0.6rem;
@@ -395,6 +400,21 @@ body {
 .toggle-icon { width: 1.3rem; height: 1.3rem; }
 .toggle-label { font-size: 0.6rem; letter-spacing: 0.1em; }
 
+/* ===== 輸入框右側擲次數 ===== */
+.toss-count {
+  position: absolute;
+  right: 0.9rem;
+  font-size: 0.7rem;
+  color: var(--warm);
+  opacity: 0.65;
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: 0.04em;
+  display: none;
+}
+.toss-count.is-visible { display: block; }
+.subject-field-wrap.has-count .subject-input { padding-right: 3.2rem; }
+
 /* ===== 其他動畫 ===== */
 @keyframes slide-down {
   from { opacity: 0; transform: translateY(-0.5rem); }
@@ -445,6 +465,7 @@ body {
           placeholder="例如：此事是否順利？"
           maxlength="50"
         >
+        <span id="tossCount" class="toss-count" aria-hidden="true"></span>
       </div>
     </section>
 
@@ -573,7 +594,7 @@ body {
   };
 
   var refs  = {};
-  var state = { advancedOpen: false };
+  var state = { advancedOpen: false, tossCnt: 0 };
 
   document.addEventListener('DOMContentLoaded', init);
 
@@ -586,9 +607,11 @@ body {
     refs.resultIcon     = document.getElementById('resultIcon');
     refs.resultName     = document.getElementById('resultName');
     refs.resultDesc     = document.getElementById('resultDesc');
-    refs.advancedToggle = document.getElementById('advancedToggle');
-    refs.subjectSection = document.getElementById('subjectSection');
-    refs.subjectInput   = document.getElementById('subjectInput');
+    refs.advancedToggle  = document.getElementById('advancedToggle');
+    refs.subjectSection  = document.getElementById('subjectSection');
+    refs.subjectInput    = document.getElementById('subjectInput');
+    refs.tossCount       = document.getElementById('tossCount');
+    refs.subjectFieldWrap = refs.subjectInput.parentElement;
 
     loadSubject();
     bindEvents();
@@ -611,6 +634,10 @@ body {
       refs.jiaobeiLeft.classList.remove('is-tossing-left');
       refs.jiaobeiRight.classList.remove('is-tossing-right');
       applyResult(resultApi.pickResult(Math.random()));
+      if (refs.subjectInput.value.trim() !== '') {
+        state.tossCnt++;
+        updateTossCount();
+      }
     }, 720);
   }
 
@@ -652,7 +679,23 @@ body {
   function saveSubject() {
     try { localStorage.setItem('jiaobei:subject', refs.subjectInput.value); }
     catch (e) { /* noop */ }
+    state.tossCnt = 0;
+    updateTossCount();
     applyWaiting();
+  }
+
+  function updateTossCount() {
+    var hasSubject = refs.subjectInput.value.trim() !== '';
+    var show = hasSubject && state.tossCnt > 0;
+    if (show) {
+      refs.tossCount.textContent = state.tossCnt + '次';
+      refs.tossCount.classList.add('is-visible');
+      refs.subjectFieldWrap.classList.add('has-count');
+    } else {
+      refs.tossCount.textContent = '';
+      refs.tossCount.classList.remove('is-visible');
+      refs.subjectFieldWrap.classList.remove('has-count');
+    }
   }
 })();
   </script>
