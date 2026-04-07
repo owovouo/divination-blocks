@@ -275,6 +275,26 @@ body {
   100% { transform: scaleX(-1) translateY(0)     rotate(0deg); }
 }
 
+/* ===== 等待擲筊（疊合）狀態 ===== */
+.jiaobei-pair--waiting {
+  gap: 0;
+}
+.jiaobei-pair--waiting .jiaobei-piece:first-child {
+  transform: rotate(-12deg) translate(10px, -4px);
+  z-index: 1;
+  margin-right: clamp(-80px, -20vw, -50px);
+}
+.jiaobei-pair--waiting .jiaobei-piece--right {
+  transform: rotate(6deg);
+  z-index: 2;
+}
+.jiaobei-button:hover .jiaobei-pair--waiting .jiaobei-piece:first-child:not(.is-tossing-left) {
+  transform: rotate(-12deg) translate(10px, -9px);
+}
+.jiaobei-button:hover .jiaobei-pair--waiting .jiaobei-piece--right:not(.is-tossing-right) {
+  transform: rotate(6deg) translateY(-5px);
+}
+
 /* ===== 結果區（固定佔位，不用 hidden） ===== */
 .result-section {
   min-height: 8rem;
@@ -561,6 +581,7 @@ body {
     refs.jiaobeiButton  = document.getElementById('jiaobeiButton');
     refs.jiaobeiLeft    = document.getElementById('jiaobeiLeft');
     refs.jiaobeiRight   = document.getElementById('jiaobeiRight');
+    refs.jiaobeiPair    = refs.jiaobeiLeft.parentElement;
     refs.resultCard     = document.getElementById('resultCard');
     refs.resultIcon     = document.getElementById('resultIcon');
     refs.resultName     = document.getElementById('resultName');
@@ -571,7 +592,7 @@ body {
 
     loadSubject();
     bindEvents();
-    applyResult('sheng');
+    applyWaiting();
   }
 
   function bindEvents() {
@@ -581,6 +602,7 @@ body {
   }
 
   function toss() {
+    refs.jiaobeiPair.classList.remove('jiaobei-pair--waiting');
     refs.resultCard.classList.add('result-card--hidden');
     refs.resultCard.classList.remove('result-card--sheng', 'result-card--yin', 'result-card--xiao');
     refs.jiaobeiLeft.classList.add('is-tossing-left');
@@ -597,6 +619,14 @@ body {
     refs.subjectSection.hidden = !state.advancedOpen;
     refs.advancedToggle.classList.toggle('is-active', state.advancedOpen);
     if (state.advancedOpen) { refs.subjectInput.focus(); }
+  }
+
+  function applyWaiting() {
+    refs.jiaobeiLeft.src  = resultApi.getPieceAsset('round');
+    refs.jiaobeiRight.src = resultApi.getPieceAsset('flat');
+    refs.jiaobeiPair.classList.add('jiaobei-pair--waiting');
+    refs.resultCard.classList.add('result-card--hidden');
+    refs.resultCard.classList.remove('result-card--sheng', 'result-card--yin', 'result-card--xiao');
   }
 
   function applyResult(result) {
@@ -622,6 +652,7 @@ body {
   function saveSubject() {
     try { localStorage.setItem('jiaobei:subject', refs.subjectInput.value); }
     catch (e) { /* noop */ }
+    applyWaiting();
   }
 })();
   </script>
